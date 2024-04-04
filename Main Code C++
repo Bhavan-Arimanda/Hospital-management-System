@@ -1,0 +1,195 @@
+#include <iostream>
+#include <vector>
+#include <string>
+#include <hpdf.h>
+
+using namespace std;
+
+// Forward declarations
+class Doctor;
+
+// Class representing a Patient
+class Patient {
+private:
+    string name;
+    string medicalHistory;
+
+public:
+    Patient(const string& name) : name(name), medicalHistory("") {}
+
+    const string& getName() const {
+        return name;
+    }
+
+    void updateMedicalHistory(const string& update) {
+        medicalHistory += update + "\n";
+    }
+
+    const string& getMedicalHistory() const {
+        return medicalHistory;
+    }
+
+    friend class Doctor;
+};
+
+// Class representing a Doctor
+class Doctor {
+private:
+    string name;
+    string specialty;
+
+public:
+    Doctor(const string& name, const string& specialty) : name(name), specialty(specialty) {}
+
+    void viewPatientHistory(const Patient& patient) const {
+        cout << "Patient: " << patient.getName() << endl;
+        cout << "Medical History: " << patient.getMedicalHistory() << endl;
+    }
+
+    const string& getName() const {
+        return name;
+    }
+
+    const string& getSpecialty() const {
+        return specialty;
+    }
+};
+
+// Class representing the Hospital Management System
+class Hospital {
+private:
+    vector<Patient> patients;
+    vector<Doctor> doctors;
+
+public:
+    void addPatient(const string& name) {
+        patients.emplace_back(name);
+    }
+
+    void addDoctor(const string& name, const string& specialty) {
+        doctors.emplace_back(name, specialty);
+    }
+
+    void scheduleAppointment(const string& patientName, const string& doctorName) {
+        Patient* patient = findPatient(patientName);
+        Doctor* doctor = findDoctor(doctorName);
+
+        if (patient && doctor) {
+            cout << "Appointment scheduled: " << patientName << " with Dr. " << doctorName << endl;
+        } else {
+            cout << "Patient or doctor not found." << endl;
+        }
+    }
+
+    void updateMedicalHistory(const string& patientName, const string& update) {
+        Patient* patient = findPatient(patientName);
+
+        if (patient) {
+            patient->updateMedicalHistory(update);
+            cout << "Medical history updated for patient: " << patientName << endl;
+        } else {
+            cout << "Patient not found." << endl;
+        }
+    }
+
+    void viewPatientHistory(const string& patientName, const string& doctorName) {
+        Doctor* doctor = findDoctor(doctorName);
+
+        if (doctor) {
+            Patient* patient = findPatient(patientName);
+
+            if (patient) {
+                doctor->viewPatientHistory(*patient);
+            } else {
+                cout << "Patient not found." << endl;
+            }
+        } else {
+            cout << "Doctor not found." << endl;
+        }
+    }
+
+    void generateReport(const string& patientName, const string& doctorName) {
+        Patient* patient = findPatient(patientName);
+        Doctor* doctor = findDoctor(doctorName);
+
+        if (patient && doctor) {
+            HPDF_Doc pdf = HPDF_New(NULL, NULL);
+            if (!pdf) {
+                cout << "Error: Unable to create PDF document." << endl;
+                return;
+            }
+
+            HPDF_Page page = HPDF_AddPage(pdf);
+            HPDF_Page_SetSize(page, HPDF_PAGE_SIZE_A4, HPDF_PAGE_PORTRAIT);
+            HPDF_Page_SetTextLeading(page, 15);
+            HPDF_Page_BeginText(page);
+            HPDF_Page_SetFontAndSize(page, HPDF_LoadTTFontFromFile("arial.ttf", HPDF_TRUE), 12);
+
+            string reportText = "Patient Name: " + patientName + "\n\n";
+            reportText += "Doctor Name: " + doctorName + "\n\n";
+            reportText += "Medical History: \n" + patient->getMedicalHistory() + "\n";
+
+            HPDF_Page_TextOut(page, 50, 750, reportText.c_str());
+
+            HPDF_Page_EndText(page);
+
+            HPDF_SaveToFile(pdf, "report.pdf");
+            HPDF_Free(pdf);
+
+            cout << "Report generated successfully." << endl;
+        } else {
+            cout << "Patient or doctor not found." << endl;
+        }
+    }
+
+private:
+    Patient* findPatient(const string& name) {
+        for (auto& patient : patients) {
+            if (patient.getName() == name) {
+                return &patient;
+            }
+        }
+        return nullptr;
+    }
+
+    Doctor* findDoctor(const string& name) {
+        for (auto& doctor : doctors) {
+            if (doctor.getName() == name) {
+                return &doctor;
+            }
+        }
+        return nullptr;
+    }
+};
+
+int main() {
+    Hospital hospital;
+
+    // Add patients
+    hospital.addPatient("Alice");
+    hospital.addPatient("Bob");
+    hospital.addPatient("Charlie");
+
+    // Add doctors
+    hospital.addDoctor("Dr. Smith", "Pediatrics");
+    hospital.addDoctor("Dr. Johnson", "Cardiology");
+    hospital.addDoctor("Dr. Williams", "Orthopedics");
+
+    // Schedule appointments
+    hospital.scheduleAppointment("Alice", "Dr. Smith");
+    hospital.scheduleAppointment("Bob", "Dr. Johnson");
+    hospital.scheduleAppointment("Charlie", "Dr. Williams");
+
+    // Update medical history
+    hospital.updateMedicalHistory("Alice", "Visited ER for flu symptoms.");
+    hospital.updateMedicalHistory("Bob", "Scheduled for heart surgery next week.");
+
+    // View patient history
+    hospital.viewPatientHistory("Alice", "Dr. Smith");
+    hospital.viewPatientHistory("Bob", "Dr. Johnson");
+
+    // Generate report
+    hospital.generateReport("Alice", "Dr. Smith");
+
+    return 0;
+}
