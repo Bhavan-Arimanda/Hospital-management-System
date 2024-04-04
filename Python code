@@ -1,3 +1,14 @@
+!pip install reportlab
+
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import letter
+from reportlab.lib import colors
+from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.lib.units import inch
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph
+
+
+
 from reportlab.pdfgen import canvas
 
 class Patient:
@@ -56,12 +67,33 @@ class Hospital:
             patient = self.patients[patient_name]
             doctor = self.doctors[doctor_name]
 
-            c = canvas.Canvas(f"{patient_name}_report.pdf")
-            c.drawString(100, 800, f"Patient: {patient_name}")
-            c.drawString(100, 780, f"Doctor: {doctor_name}")
-            c.drawString(100, 760, "Medical History:")
-            c.drawString(100, 740, patient.medical_history)
-            c.save()
+            # Create a PDF file
+            doc = SimpleDocTemplate(f"{patient_name}_report.pdf", pagesize=letter)
+            styles = getSampleStyleSheet()
+            elements = []
+
+            # Hospital Name
+            hospital_name = Paragraph("<para align=center><font size=22><b>Hospital Name</b></font></para>", styles["Normal"])
+            elements.append(hospital_name)
+
+            # Serial Number
+            serial_number = len(self.patients)  # Assuming serial number based on number of patients
+            elements.append(Paragraph(f"Serial Number: {serial_number}", styles["Normal"]))
+
+            # Patient Name
+            elements.append(Paragraph(f"Patient Name: {patient_name}", styles["Normal"]))
+            # Add more patient details as needed...
+
+            # Doctor Name
+            elements.append(Paragraph(f"Doctor Name: {doctor_name}", styles["Normal"]))
+            # Add more doctor details as needed...
+
+            # Medical History
+            elements.append(Paragraph("<b>Medical History:</b>", styles["Normal"]))
+            elements.append(Paragraph(patient.medical_history, styles["Normal"]))
+
+            # Build the PDF
+            doc.build(elements)
             print("Report generated successfully.")
         else:
             print("Patient or doctor not found.")
