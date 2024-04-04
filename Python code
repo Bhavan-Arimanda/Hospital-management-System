@@ -1,0 +1,78 @@
+from reportlab.pdfgen import canvas
+
+class Patient:
+    def __init__(self, name):
+        self.name = name
+        self.medical_history = ""
+
+    def update_medical_history(self, update):
+        self.medical_history += update + "\n"
+
+class Doctor:
+    def __init__(self, name, specialty):
+        self.name = name
+        self.specialty = specialty
+
+    def view_patient_history(self, patient):
+        print(f"Patient: {patient.name}")
+        print(f"Medical History: {patient.medical_history}")
+
+class Hospital:
+    def __init__(self):
+        self.patients = {}
+        self.doctors = {}
+
+    def add_patient(self, name):
+        self.patients[name] = Patient(name)
+
+    def add_doctor(self, name, specialty):
+        self.doctors[name] = Doctor(name, specialty)
+
+    def schedule_appointment(self, patient_name, doctor_name):
+        if patient_name in self.patients and doctor_name in self.doctors:
+            print(f"Appointment scheduled: {patient_name} with Dr. {doctor_name}")
+        else:
+            print("Patient or doctor not found.")
+
+    def update_medical_history(self, patient_name, update):
+        if patient_name in self.patients:
+            self.patients[patient_name].update_medical_history(update)
+            print(f"Medical history updated for patient: {patient_name}")
+        else:
+            print("Patient not found.")
+
+    def view_patient_history(self, patient_name, doctor_name):
+        if doctor_name in self.doctors:
+            doctor = self.doctors[doctor_name]
+            if patient_name in self.patients:
+                doctor.view_patient_history(self.patients[patient_name])
+            else:
+                print("Patient not found.")
+        else:
+            print("Doctor not found.")
+
+    def generate_report(self, patient_name, doctor_name):
+        if patient_name in self.patients and doctor_name in self.doctors:
+            patient = self.patients[patient_name]
+            doctor = self.doctors[doctor_name]
+
+            c = canvas.Canvas(f"{patient_name}_report.pdf")
+            c.drawString(100, 800, f"Patient: {patient_name}")
+            c.drawString(100, 780, f"Doctor: {doctor_name}")
+            c.drawString(100, 760, "Medical History:")
+            c.drawString(100, 740, patient.medical_history)
+            c.save()
+            print("Report generated successfully.")
+        else:
+            print("Patient or doctor not found.")
+
+# Usage
+hospital = Hospital()
+hospital.add_patient("Alice")
+hospital.add_patient("Bob")
+hospital.add_doctor("Dr. Smith", "Pediatrics")
+hospital.add_doctor("Dr. Johnson", "Cardiology")
+hospital.schedule_appointment("Alice", "Dr. Smith")
+hospital.update_medical_history("Alice", "Visited ER for flu symptoms.")
+hospital.view_patient_history("Alice", "Dr. Smith")
+hospital.generate_report("Alice", "Dr. Smith")
